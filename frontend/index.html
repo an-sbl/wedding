@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест формы - Свадьба Егора и Анны</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #b34e4e;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background: #8e3a3a;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Егор + Анна</h1>
+        <h2>Подтверждение присутствия</h2>
+        
+        <form id="guestForm">
+            <input type="text" id="fullName" placeholder="Ваше ФИО" required>
+            
+            <p>Вы придёте?</p>
+            <label>
+                <input type="radio" name="attendance" value="yes" checked> Да, буду!
+            </label>
+            <label>
+                <input type="radio" name="attendance" value="no"> Нет, не смогу
+            </label>
+            
+            <p>Пожелания / особенности:</p>
+            <label>
+                <input type="checkbox" value="Без глютена"> Без глютена
+            </label>
+            <label>
+                <input type="checkbox" value="Вегетарианское"> Вегетарианское меню
+            </label>
+            <label>
+                <input type="checkbox" value="Детское кресло"> Детское кресло
+            </label>
+            
+            <button type="submit">Отправить</button>
+        </form>
+        
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000'; // локальный бэкенд
+        
+        document.getElementById('guestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('fullName').value.trim();
+            if (!fullName) {
+                showMessage('Пожалуйста, введите ваше имя', 'error');
+                return;
+            }
+            
+            const attendance = document.querySelector('input[name="attendance"]:checked').value;
+            const wishes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => cb.value);
+            
+            const button = e.target.querySelector('button');
+            button.disabled = true;
+            button.textContent = 'Отправка...';
+            
+            try {
+                const response = await fetch(`${API_URL}/guest/rsvp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fullName, attendance, wishes })
+                });
+                
+                if (response.ok) {
+                    showMessage('✅ Спасибо! Ждём вас на свадьбе! ❤️', 'success');
+                    e.target.reset();
+                    document.querySelector('input[name="attendance"][value="yes"]').checked = true;
+                } else {
+                    throw new Error('Ошибка сервера');
+                }
+            } catch (error) {
+                showMessage('❌ Ошибка. Попробуйте позже.', 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Отправить';
+            }
+        });
+        
+        function showMessage(text, type) {
+            const msgDiv = document.getElementById('message');
+            msgDiv.textContent = text;
+            msgDiv.className = `message ${type}`;
+            msgDiv.style.display = 'block';
+            setTimeout(() => {
+                msgDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
